@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PGA PVI Tracker</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        table { width: 90%; margin: 20px auto; border-collapse: collapse; }
+        th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+        th { background-color: #f4f4f4; }
+    </style>
+</head>
+<body>
+
+    <h1>PGA PVI Tracker</h1>
+    <table id="dataTable"></table>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        async function fetchExcel() {
+            const response = await fetch('2025%20PGA%20PVI.xlsx'); // Fetch the Excel file from GitHub
+            const data = await response.arrayBuffer();
+            const workbook = XLSX.read(data, { type: 'array' });
+
+            const sheetName = workbook.SheetNames[0]; // Load the first sheet
+            const sheet = workbook.Sheets[sheetName];
+            const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+            let tableHTML = "<tr>";
+            jsonData[0].forEach(col => tableHTML += `<th>${col}</th>`);
+            tableHTML += "</tr>";
+
+            jsonData.slice(1).forEach(row => {
+                tableHTML += "<tr>";
+                row.forEach(cell => tableHTML += `<td>${cell || ''}</td>`);
+                tableHTML += "</tr>";
+            });
+
+            document.getElementById("dataTable").innerHTML = tableHTML;
+        }
+
+        fetchExcel();
+    </script>
+
+</body>
+</html>
