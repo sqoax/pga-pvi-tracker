@@ -7,19 +7,29 @@
     <style>
         body { font-family: Arial, sans-serif; text-align: center; }
         table { width: 90%; margin: 20px auto; border-collapse: collapse; }
-        th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+        th, td { border: 1px solid #ccc; padding: 10px; text-align: left; cursor: pointer; }
         th { background-color: #f4f4f4; }
     </style>
 </head>
 <body>
 
     <h1>PGA PVI Tracker</h1>
-    <table id="dataTable"></table>
+    <table id="dataTable">
+        <thead>
+            <tr>
+                <th onclick="sortTable(0)">Name</th>
+                <th onclick="sortTable(1)">Events Played</th>
+                <th onclick="sortTable(2)">AVG PVI</th>
+                <th onclick="sortTable(3)">Total PVI</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script>
         async function fetchExcel() {
-            const response = await fetch('2025%20PGA%20PVI.xlsx'); // Fetch the Excel file from GitHub
+            const response = await fetch('https://raw.githubusercontent.com/sqoax/pga-pvi-tracker/main/2025%20PGA%20PVI.xlsx');
             const data = await response.arrayBuffer();
             const workbook = XLSX.read(data, { type: 'array' });
 
@@ -27,17 +37,44 @@
             const sheet = workbook.Sheets[sheetName];
             const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-            let tableHTML = "<tr>";
-            jsonData[0].forEach(col => tableHTML += `<th>${col}</th>`);
-            tableHTML += "</tr>";
+            const tableBody = document.querySelector("#dataTable tbody");
+            tableBody.innerHTML = ""; // Clear table before adding data
 
             jsonData.slice(1).forEach(row => {
-                tableHTML += "<tr>";
-                row.forEach(cell => tableHTML += `<td>${cell || ''}</td>`);
-                tableHTML += "</tr>";
+                let tr = document.createElement("tr");
+                row.forEach(cell => {
+                    let td = document.createElement("td");
+                    td.textContent = cell || '';
+                    tr.appendChild(td);
+                });
+                tableBody.appendChild(tr);
+            });
+        }
+
+        function sortTable(columnIndex) {
+            let table = document.getElementById("dataTable");
+            let tbody = table.querySelector("tbody");
+            let rows = Array.from(tbody.rows);
+
+            let isNumeric = columnIndex > 0; // Only sort numerically for Events Played, AVG PVI, and Total PVI
+            let ascending = table.dataset.sortOrder !== "asc"; // Toggle sort order
+
+            rows.sort((a, b) => {
+                let valA = a.cells[columnIndex].textContent.trim();
+                let valB = b.cells[columnIndex].textContent.trim();
+
+                if (isNumeric) {
+                    valA = parseFloat(valA) || 0;
+                    valB = parseFloat(valB) || 0;
+                }
+
+                return ascending ? valB - valA : valA - valB;
             });
 
-            document.getElementById("dataTable").innerHTML = tableHTML;
+            tbody.innerHTML = "";
+            rows.forEach(row => tbody.appendChild(row));
+
+            table.dataset.sortOrder = ascending ? "asc" : "desc"; // Toggle sort order
         }
 
         fetchExcel();
